@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="kr">
+  <head>
+    <meta charset="utf-8" />
+
+    <style>
+      .layout {
+        width: 100%;
+        margin-top: 100px;
+      }
+      .title {
+        text-align: center;
+      }
+      .btnLayout {
+        width: 100%;
+        text-align: center;
+      }
+      button {
+        width: 230px;
+        background-color: gray;
+        color: white;
+        border: 1px solid gray;
+        border-radius: 2px;
+        padding: 0 15px;
+        margin: 25px 0 0 0;
+        cursor: pointer;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease-in-out;
+      }
+      .activeBtn {
+        background-color: green;
+        color: white;
+        border: 1px solid green;
+        transform: scale(1.1);
+      }
+      .output {
+        text-align: left;
+        margin: 0 20px;
+        background-color: #dddddd;
+        min-height: 200px;
+      }
+
+      .output > p {
+        margin: 0;
+        padding: 5px 0 0 10px;
+      }
+
+      #info {
+        cursor: pointer;
+        margin-top: 50px;
+      }
+
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="layout">
+      <h1 class="title">Web Speech API</h1>
+      <div class="btnLayout">
+        <button id="startButton">
+          <p>Click before or after speaking</p>
+        </button>
+        <br />
+        <div id="state">Ready to record</div>
+      </div>
+
+      <span style="font-style: italic">Result</span>
+      <div class="output">
+        <p></p>
+      </div>
+
+      <div id="info">
+        <span style="font-style: italic">Developer</span>
+        <div id="infoDiv" class="hidden">
+          <ul>
+            <strong>Browser compatibility</strong>
+            <li>Chrome</li>
+            <li>Edge</li>
+            <li>Safari</li>
+            <li>WebView(Android,IOS)</li>
+          </ul>
+          <ul>
+            <strong>비용</strong>
+            <li>무료</li>
+          </ul>
+          <ul>
+            <strong>선행조건</strong>
+            <li>마이크 필요</li>
+            <li>브라우저의 마이크가 허용된 상태여야 함</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let isRecording = false;
+      let isHiddenDiv = true;
+      const info = document.getElementById("info");
+      const infoDiv = document.getElementById("infoDiv");
+      const startButton = document.getElementById("startButton");
+      const state = document.getElementById("state");
+
+      var SpeechRecognition = SpeechRecognition || webkitSpeechRecognition;
+      var SpeechRecognitionEvent =
+        SpeechRecognitionEvent || webkitSpeechRecognitionEvent;
+
+      const recognition = new SpeechRecognition();
+
+      /** continuous: Controls whether continuous results are returned for each recognition, or only a single result. Defaults to single **/
+      recognition.continuous = false;
+      recognition.lang = "ko-KR";
+      /** interimResults: Controls whether interim results should be returned (true) or not (false.) Interim results are results that are not yet final **/
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      let diagnostic = null;
+      const makeNewTextContent = function () {
+        if (diagnostic === null) {
+          diagnostic = document.createElement("p");
+          document.querySelector(".output").appendChild(diagnostic);
+        }
+      };
+
+      startButton.addEventListener("click", () => {
+        if (isRecording === false) {
+          if ("webkitSpeechRecognition" in window) {
+            state.textContent = "Recording ...";
+            startButton.className = "activeBtn";
+            makeNewTextContent();
+
+            recognition.start();
+          } else {
+            diagnostic.textContent = "Speech Recognition Not Available";
+          }
+        } else {
+          state.textContent = "Ready to record";
+          startButton.className = "";
+
+          recognition.stop();
+        }
+        isRecording = !isRecording;
+      });
+
+      recognition.onresult = function (event) {
+        diagnostic.textContent = event.results[0][0].transcript;
+      };
+
+      recognition.onerror = function (event) {
+        diagnostic.textContent =
+          "Error occurred in recognition: " + event.error;
+      };
+
+      info.addEventListener("click", () => {
+        infoDiv.className = isHiddenDiv ? "" : "hidden";
+        isHiddenDiv = !isHiddenDiv;
+      });
+    </script>
+  </body>
+</html>
