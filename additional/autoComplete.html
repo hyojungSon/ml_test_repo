@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="kr">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      /* 현재 선택된 검색어 */
+      .autocomplete > div.active {
+        background: #e0e5f6;
+        color: #000;
+      }
+
+      /* -------------------------- */
+
+      .autocomplete > div {
+        background: #f1f3f499;
+        padding: 0.2rem 0.6rem;
+      }
+
+      section {
+        width: 500px;
+        padding: 1.5rem 1.6rem;
+        box-shadow: 0 0 1rem rgba(0, 0, 0, 0.05);
+        border-radius: 5px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background: #fff;
+        margin-top: 2rem;
+      }
+
+      @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        outline: none;
+        word-break: break-all;
+        font-family: Pretendard;
+      }
+
+      input {
+        width: 100%;
+        height: 3rem;
+        border-radius: 5px;
+        padding: 0 1rem;
+        border: 1px solid #e0e5f6;
+        background: #fff;
+        margin: 1rem 0;
+      }
+
+      input::placeholder {
+        font-size: 1rem;
+      }
+
+      body {
+        background: #f7f8fc;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      mark {
+        background: #febf0090;
+      }
+
+      p {
+        opacity: 0.8;
+        font-size: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <section>
+      <h2>초성검색 자동완성</h2>
+      <p>"빨간색", "파란색", "노란색", "검정색", "red", "green"</p>
+      <!-- 검색어 입력창   -->
+      <input
+        type="text"
+        id="search"
+        placeholder="검색어를 입력해주세요."
+        autocomplete="off"
+      />
+      <!-- 자동완성 단어 리스트 -->
+      <div class="autocomplete"></div>
+    </section>
+
+    <script>
+      /*
+  초성검색 부분
+*/
+      const CHO_HANGUL = [
+        "ㄱ",
+        "ㄲ",
+        "ㄴ",
+        "ㄷ",
+        "ㄸ",
+        "ㄹ",
+        "ㅁ",
+        "ㅂ",
+        "ㅃ",
+        "ㅅ",
+        "ㅆ",
+        "ㅇ",
+        "ㅈ",
+        "ㅉ",
+        "ㅊ",
+        "ㅋ",
+        "ㅌ",
+        "ㅍ",
+        "ㅎ",
+      ];
+
+      const HANGUL_START_CHARCODE = "가".charCodeAt();
+
+      const CHO_PERIOD = Math.floor("까".charCodeAt() - "가".charCodeAt());
+      const JUNG_PERIOD = Math.floor("개".charCodeAt() - "가".charCodeAt());
+
+      function combine(cho, jung, jong) {
+        return String.fromCharCode(
+          HANGUL_START_CHARCODE + cho * CHO_PERIOD + jung * JUNG_PERIOD + jong
+        );
+      }
+
+      // 초성검색
+      function makeRegexByCho(search = "") {
+        const regex = CHO_HANGUL.reduce(
+          (acc, cho, index) =>
+            acc.replace(
+              new RegExp(cho, "g"),
+              `[${combine(index, 0, 0)}-${combine(index + 1, 0, -1)}]`
+            ),
+          search
+        );
+
+        return new RegExp(`(${regex})`, "g");
+      }
+
+      function includeByCho(search, targetWord) {
+        return makeRegexByCho(search).test(targetWord);
+      }
+
+      /*
+  자동완성 부분
+*/
+      const dataList = ["빨간색", "파란색", "노란색", "검정색", "red", "green"];
+
+      const $search = document.querySelector("#search");
+      const $autoComplete = document.querySelector(".autocomplete");
+
+      let nowIndex = 0;
+
+      $search.onkeyup = (event) => {
+        // 검색어
+        const value = $search.value.trim();
+
+        // 자동완성 필터링
+        const matchDataList = value
+          ? dataList.filter((label) => includeByCho(value, label))
+          : [];
+
+        switch (event.keyCode) {
+          // UP KEY
+          case 38:
+            nowIndex = Math.max(nowIndex - 1, 0);
+            break;
+
+          // DOWN KEY
+          case 40:
+            nowIndex = Math.min(nowIndex + 1, matchDataList.length - 1);
+            break;
+
+          // ENTER KEY
+          case 13:
+            document.querySelector("#search").value =
+              matchDataList[nowIndex] || "";
+
+            // 초기화
+            nowIndex = 0;
+            matchDataList.length = 0;
+            break;
+
+          // 그외 다시 초기화
+          default:
+            nowIndex = 0;
+            break;
+        }
+
+        // 리스트 보여주기
+        showList(matchDataList, value, nowIndex);
+      };
+
+      const showList = (data, value, nowIndex) => {
+        // 초성 정규식으로 변환
+        const regex = makeRegexByCho(value);
+
+        $autoComplete.innerHTML = data
+          .map(
+            (label, index) => `
+      <div class='${nowIndex === index ? "active" : ""}'>
+        ${label.replace(regex, "<mark>$1</mark>")}
+      </div>
+    `
+          )
+          .join("");
+      };
+    </script>
+  </body>
+</html>
