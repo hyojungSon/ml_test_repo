@@ -97,44 +97,46 @@
         let reader = new FileReader();
         reader.onloadend = function() {
           audio = reader.result;
+          console.log('audio2', audio)
         };
 
         let blob = new Blob([data], {type: 'audio/wav'});
         reader.readAsDataURL(blob);
 
-        var settings = {
-          "url": openApiURL,
-          "method": "POST",
-          "timeout": 0,
-          "headers": {
-            "X-CLOVASPEECH-API-KEY": accessKey,
-            "Content-Type": "application/octet-stream"
-          },
-          "data": audio
-        };
-
-        $.ajax(settings).done(function (response) {
-          console.log(response);
-        });
-
-        // $.ajax({
-        //   url : openApiURL,
-        //   data : blob,
-        //   processData:false,
-        //   contentType:false,
-        //   type : 'POST',
-        //   beforeSend : function(xhr){
-        //     xhr.setRequestHeader('Content-Type', 'application/octet-stream'); 
-        //     xhr.setRequestHeader('X-CLOVASPEECH-API-KEY', accessKey);
+        // var settings = {
+        //   "url": openApiURL,
+        //   "method": "POST",
+        //   "timeout": 0,
+        //   "headers": {
+        //     "X-CLOVASPEECH-API-KEY": accessKey,
+        //     "Content-Type": "application/octet-stream"
         //   },
-        //   success : function(res){
-        //     console.log('res', res)
-        //     document.getElementById('txtInput').innerText = JSON.stringify(res.return_object);
-        //   },
-        //   error : function(res){
-        //     // 서비스 실패 시 처리 할 내용
-        //   }
+        //   "data": audio
+        // };
+
+        // $.ajax(settings).done(function (response) {
+        //   console.log(response);
         // });
+
+        console.log('audio', audio)
+        $.ajax({
+          url : openApiURL,
+          data : blob,
+          processData: false,
+          contentType: false,
+          type : 'POST',
+          beforeSend : function(xhr){
+            xhr.setRequestHeader('Content-Type', 'application/octet-stream'); 
+            xhr.setRequestHeader('X-CLOVASPEECH-API-KEY', accessKey);
+          },
+          success : function(res){
+            console.log('res', res)
+            document.getElementById('txtInput').innerText = JSON.stringify(res.return_object);
+          },
+          error : function(res){
+            // 서비스 실패 시 처리 할 내용
+          }
+        });
       }
 
       function onChange(data) {
