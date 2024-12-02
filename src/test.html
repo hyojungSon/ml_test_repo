@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>음성인식</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+
+      var mediaRecorder = null;
+      var audioStream = null;
+      var audioChunks = [];
+      var isVoice = false;
+
+      function onVoice() {
+        if (isVoice) {
+          console.log('end voice');
+          mediaRecorder.stop();
+          audioStream.getTracks().forEach(track => track.stop());
+          document.getElementById('audioButton').value = '음성인식';
+          isVoice = false;
+        } else {
+          navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+            .then(stream => {      
+              audioStream = stream;      
+              // mediaRecorder 초기화
+              mediaRecorder = new MediaRecorder(stream);
+              mediaRecorder.ondataavailable = event => {
+                console.log('event voice', event.data);
+                //stt(event.data)
+                audioChunks.push(event.data);
+              };
+              mediaRecorder.onstop = () => {
+                console.log('audioChunks', audioChunks)
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                document.getElementById('audioPlayer').src = audioUrl;
+                console.log('audioBlob', audioUrl)
+
+                stt(audioBlob)
+              };
+              console.log('start voice');
+              mediaRecorder.start(3000);
+              document.getElementById('audioButton').value = '중지';
+              isVoice = true;
+            })
+            .catch(console.error);
+        }
+      };
+
+      function stt(data) {
+        let audio = '';
+        let reader = new FileReader();
+        reader.onloadend = function() {
+          audio = reader.result;
+        };
+
+        let blob = new Blob([data], {type: 'audio/wav'});
+        reader.readAsDataURL(blob);
+
+        var openApiURL = 'http://aiopen.etri.re.kr:8000/WiseASR/Recognition';
+        var accessKey = '7a1ac71b-a470-4439-9cd4-ee819680a3b9';
+        var languageCode = 'korean';
+        
+        var requestJson = {
+          'argument': {
+            'language_code': languageCode,
+            'audio': audio
+          }
+        };
+
+        $.ajax({
+          url : openApiURL,
+          data : JSON.stringify(requestJson),
+          type : 'POST', 
+          dataType : 'json',
+          beforeSend : function(xhr){
+            xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8'); 
+            xhr.setRequestHeader('Authorization', accessKey);
+          },
+          success : function(res){
+            console.log('res', res)
+            document.getElementById('txtInput').innerText = JSON.stringify(res.return_object);
+          },
+          error : function(res){
+            // 서비스 실패 시 처리 할 내용
+          }
+        });
+      };
+
+    </script>
+  </head>
+  <body>
+    <textarea id="txtInput" style="width: 100%;" rows="5"></textarea>
+    <audio id="audioPlayer" controls></audio>
+    <br />
+    <!-- <input id="chkAiOpen" type="radio" name="chkApi" checked>AI API/DATA</input>
+    <input id="chkNaver" type="radio" name="chkApi">Naver CLOVA</input>
+    <br /> -->
+    <input id="audioButton" type="button" value="음성인식" onclick="onVoice()">
+  </body>
+</html>
