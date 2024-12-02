@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
     <title>음성인식</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
@@ -39,7 +38,7 @@
                 document.getElementById('audioPlayer').src = audioUrl;
                 console.log('audioBlob', audioUrl)
 
-                stt(audioBlob)
+                naver_stt(audioBlob)
               };
               console.log('start voice');
               mediaRecorder.start(3000);
@@ -90,6 +89,98 @@
         });
       };
 
+      function naver_stt(data) {
+        let openApiURL = 'https://clovaspeech-gw.ncloud.com/recog/v1/stt?lang=Kor';
+        let accessKey = 'c7b24ff597d24fcea7ab1518a584b9cb';
+
+        let audio = '';
+        let reader = new FileReader();
+        reader.onloadend = function() {
+          audio = reader.result;
+        };
+
+        let blob = new Blob([data], {type: 'audio/wav'});
+        reader.readAsDataURL(blob);
+
+        var settings = {
+          "url": openApiURL,
+          "method": "POST",
+          "timeout": 0,
+          "headers": {
+            "X-CLOVASPEECH-API-KEY": accessKey,
+            "Content-Type": "application/octet-stream"
+          },
+          "data": audio
+        };
+
+        $.ajax(settings).done(function (response) {
+          console.log(response);
+        });
+
+        // $.ajax({
+        //   url : openApiURL,
+        //   data : blob,
+        //   processData:false,
+        //   contentType:false,
+        //   type : 'POST',
+        //   beforeSend : function(xhr){
+        //     xhr.setRequestHeader('Content-Type', 'application/octet-stream'); 
+        //     xhr.setRequestHeader('X-CLOVASPEECH-API-KEY', accessKey);
+        //   },
+        //   success : function(res){
+        //     console.log('res', res)
+        //     document.getElementById('txtInput').innerText = JSON.stringify(res.return_object);
+        //   },
+        //   error : function(res){
+        //     // 서비스 실패 시 처리 할 내용
+        //   }
+        // });
+      }
+
+      function onChange(data) {
+        console.log('this', data.files)
+        if(data.files.length > 0){
+            let openApiURL = 'https://clovaspeech-gw.ncloud.com/recog/v1/stt?lang=Kor';
+            let accessKey = 'c7b24ff597d24fcea7ab1518a584b9cb';
+
+            //let blob = new Blob([data], {type: 'audio/wav'});
+
+            var settings = {
+              "url": openApiURL,
+              "method": "POST",
+              "timeout": 0,
+              "headers": {
+                "X-CLOVASPEECH-API-KEY": accessKey,
+                "Content-Type": "application/octet-stream"
+              },
+              "data": data.files[0]
+            };
+
+            $.ajax(settings).done(function (response) {
+              console.log(response);
+            });
+
+            // $.ajax({
+            //   url : openApiURL,
+            //   data : data.files[0],
+            //   processData:false,
+            //   contentType:false,
+            //   type : 'POST',
+            //   beforeSend : function(xhr){
+            //     xhr.setRequestHeader('Content-Type', 'application/octet-stream'); 
+            //     xhr.setRequestHeader('X-CLOVASPEECH-API-KEY', accessKey);
+            //   },
+            //   success : function(res){
+            //     console.log('res', res)
+            //     document.getElementById('txtInput').innerText = JSON.stringify(res);
+            //   },
+            //   error : function(res){
+            //     // 서비스 실패 시 처리 할 내용
+            //   }
+            // });
+        }
+    };
+
     </script>
   </head>
   <body>
@@ -100,5 +191,6 @@
     <input id="chkNaver" type="radio" name="chkApi">Naver CLOVA</input>
     <br /> -->
     <input id="audioButton" type="button" value="음성인식" onclick="onVoice()">
+    <input id="audioFile" type="file" onchange="onChange(this)">
   </body>
 </html>
